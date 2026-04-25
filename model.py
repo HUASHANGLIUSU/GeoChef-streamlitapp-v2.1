@@ -7,7 +7,7 @@ import streamlit as st
 load_dotenv()
 
 API_URL = "https://chat.ecnu.edu.cn/open/api/v1/chat/completions"
-API_KEY = st.secrets["CHARECNU_API_KEY"]
+API_KEY = st.secrets["CHATECNU_API_KEY"]
 MODEL_NAME = "ecnu-plus"
 
 
