@@ -97,15 +97,19 @@ def _render_radar(items: list, i18n: dict):
 def render_compare(i18n: dict, lang: str, chef):
     all_names = chef.get_all_dataset_names()
 
-    # 清空按钮在 multiselect 渲染前处理
+    # 清空
     if st.session_state.get("_compare_clear_flag"):
         st.session_state["_compare_clear_flag"] = False
         st.session_state["_compare_data"] = []
         st.session_state["compare_select"] = []
         st.session_state["_compare_names"] = None
 
+    # 外部写入（来自结果卡片的加入/移出）时同步到 compare_select
+    # 只在 _compare_data 和 compare_select 不一致时才覆盖，避免干扰用户正在操作的 multiselect
     compare_data: list = st.session_state.get("_compare_data", [])
-    st.session_state["compare_select"] = compare_data
+    current_select: list = st.session_state.get("compare_select", [])
+    if set(compare_data) != set(current_select):
+        st.session_state["compare_select"] = compare_data
 
     sel_col, start_col, clear_col = st.columns([5, 1, 1], gap="medium")
     with sel_col:
@@ -116,7 +120,8 @@ def render_compare(i18n: dict, lang: str, chef):
             max_selections=4,
             placeholder=("请选择 2~4 个数据集..." if lang == "cn" else "Select 2–4 datasets..."),
         )
-        if set(selected_names) != set(compare_data):
+        # 用户在 multiselect 里操作时，同步回 _compare_data
+        if set(selected_names) != set(st.session_state.get("_compare_data", [])):
             st.session_state["_compare_data"] = selected_names
     with start_col:
         st.markdown("<div style='margin-top:28px'>", unsafe_allow_html=True)
@@ -150,7 +155,6 @@ def render_compare(i18n: dict, lang: str, chef):
     items = [it for it in items if it is not None]
     if len(items) < 2:
         return
-
     # 雷达图
     _render_radar(items, i18n)
 
