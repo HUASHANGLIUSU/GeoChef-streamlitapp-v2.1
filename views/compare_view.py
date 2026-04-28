@@ -98,9 +98,9 @@ def render_compare(i18n: dict, lang: str, chef):
     all_names = chef.get_all_dataset_names()
 
     if st.session_state.get("_compare_clear_flag"):
-    st.session_state["_compare_clear_flag"] = False
-    st.session_state["_compare_data"] = []
-    st.session_state["_compare_names"] = None
+       st.session_state["_compare_clear_flag"] = False
+       st.session_state["_compare_data"] = []
+       st.session_state["_compare_names"] = None
 
     # _compare_data 是唯一数据源，multiselect 不使用 key，用 default 初始化
     compare_data: list = st.session_state.get("_compare_data", [])
