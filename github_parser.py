@@ -1,6 +1,6 @@
 import re
 
-README_LOCAL_PATH = "README.md"
+README_LOCAL_PATH = "dataset_links.md"
 name_to_paper = {}
 
 
