@@ -97,32 +97,25 @@ def _render_radar(items: list, i18n: dict):
 def render_compare(i18n: dict, lang: str, chef):
     all_names = chef.get_all_dataset_names()
 
-    # 清空
     if st.session_state.get("_compare_clear_flag"):
-        st.session_state["_compare_clear_flag"] = False
-        st.session_state["_compare_data"] = []
-        st.session_state["compare_select"] = []
-        st.session_state["_compare_names"] = None
+    st.session_state["_compare_clear_flag"] = False
+    st.session_state["_compare_data"] = []
+    st.session_state["_compare_names"] = None
 
-    # 外部写入（来自结果卡片的加入/移出）时同步到 compare_select
-    # 只在 _compare_data 和 compare_select 不一致时才覆盖，避免干扰用户正在操作的 multiselect
+    # _compare_data 是唯一数据源，multiselect 不使用 key，用 default 初始化
     compare_data: list = st.session_state.get("_compare_data", [])
-    current_select: list = st.session_state.get("compare_select", [])
-    if set(compare_data) != set(current_select):
-        st.session_state["compare_select"] = compare_data
 
     sel_col, start_col, clear_col = st.columns([5, 1, 1], gap="medium")
     with sel_col:
         selected_names = st.multiselect(
             i18n.get("compare_select", "选择要对比的数据集（2~4个）"),
             all_names,
-            key="compare_select",
+            default=compare_data,
             max_selections=4,
             placeholder=("请选择 2~4 个数据集..." if lang == "cn" else "Select 2–4 datasets..."),
         )
-        # 用户在 multiselect 里操作时，同步回 _compare_data
-        if set(selected_names) != set(st.session_state.get("_compare_data", [])):
-            st.session_state["_compare_data"] = selected_names
+        # 用户操作 multiselect 后立即同步回 _compare_data
+        st.session_state["_compare_data"] = selected_names
     with start_col:
         st.markdown("<div style='margin-top:28px'>", unsafe_allow_html=True)
         start_btn = st.button(
