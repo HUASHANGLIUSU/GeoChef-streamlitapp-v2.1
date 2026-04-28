@@ -56,7 +56,7 @@ def init_session():
         "filter_methods": [],
         "leak_source_select": None,
         "leak_batch_select": [],
-        "compare_select": [],
+        "_compare_data": [],
     }
     for key, val in defaults.items():
         if key not in st.session_state:
