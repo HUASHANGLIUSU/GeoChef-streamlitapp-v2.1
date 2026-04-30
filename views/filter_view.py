@@ -31,32 +31,41 @@ def _render_chat_hint(lang: str):
 
 def render_filter(i18n: dict, lang: str, chef):
     _render_chat_hint(lang)
-    # 关键词搜索框
-    search_query = st.text_input(
-        i18n["search_placeholder"],
-        placeholder=i18n["search_placeholder"],
-        key="filter_search_input",
-        label_visibility="collapsed"
-    )
 
-    cols = st.columns(5, gap="medium")
-    with cols[0]:
-        modals = st.multiselect(i18n["modal"], chef.modalities, key="filter_modals", placeholder="请选择..." if lang == "cn" else "Select...")
-    with cols[1]:
-        tasks = st.multiselect(i18n["task"], chef.tasks, key="filter_tasks", placeholder="请选择..." if lang == "cn" else "Select...")
-    with cols[2]:
-        years = st.multiselect(i18n["year"], chef.years, key="filter_years", placeholder="请选择..." if lang == "cn" else "Select...")
-    with cols[3]:
-        publishers = st.multiselect(i18n["publisher"], chef.publishers, key="filter_publishers", placeholder="请选择..." if lang == "cn" else "Select...")
-    with cols[4]:
-        methods = st.multiselect(i18n["method"], chef.methods, key="filter_methods", placeholder="请选择..." if lang == "cn" else "Select...")
+    # ── 筛选区容器 ──────────────────────────────────────
+    with st.container(border=True):
+        # 关键词搜索框
+        search_query = st.text_input(
+            i18n["search_placeholder"],
+            placeholder=i18n["search_placeholder"],
+            key="filter_search_input",
+            label_visibility="collapsed"
+        )
 
-    btn_cols = st.columns([7, 3], gap="medium")
-    with btn_cols[0]:
-        go = st.button(i18n["search_btn"], key="filter_go_btn", use_container_width=True)
-    with btn_cols[1]:
-        rand = st.button(i18n["random"], key="filter_rand_btn", use_container_width=True, type="secondary")
+        cols = st.columns(5, gap="medium")
+        with cols[0]:
+            modals = st.multiselect(i18n["modal"], chef.modalities, key="filter_modals",
+                                    placeholder="请选择..." if lang == "cn" else "Select...")
+        with cols[1]:
+            tasks = st.multiselect(i18n["task"], chef.tasks, key="filter_tasks",
+                                   placeholder="请选择..." if lang == "cn" else "Select...")
+        with cols[2]:
+            years = st.multiselect(i18n["year"], chef.years, key="filter_years",
+                                   placeholder="请选择..." if lang == "cn" else "Select...")
+        with cols[3]:
+            publishers = st.multiselect(i18n["publisher"], chef.publishers, key="filter_publishers",
+                                        placeholder="请选择..." if lang == "cn" else "Select...")
+        with cols[4]:
+            methods = st.multiselect(i18n["method"], chef.methods, key="filter_methods",
+                                     placeholder="请选择..." if lang == "cn" else "Select...")
 
+        btn_cols = st.columns([7, 3], gap="medium")
+        with btn_cols[0]:
+            go = st.button(i18n["search_btn"], key="filter_go_btn", use_container_width=True)
+        with btn_cols[1]:
+            rand = st.button(i18n["random"], key="filter_rand_btn", use_container_width=True, type="secondary")
+
+    # ── 执行搜索 ────────────────────────────────────────
     if rand:
         st.session_state.search_results = [chef.random_one()] if chef.random_one() else []
         st.session_state.result_page = 0

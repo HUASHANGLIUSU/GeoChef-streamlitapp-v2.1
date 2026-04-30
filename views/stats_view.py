@@ -95,29 +95,71 @@ def _render_overview_charts(stats: dict, i18n: dict, c: dict):
 
 # ── 地理覆盖地图 ──────────────────────────────────────────────────────────────
 
+# 国家名称 → ISO-3 代码映射（确保正确识别，同时把台湾数据归入中国）
+_NATION_TO_ISO3 = {
+    "China":                 "CHN",
+    "United States":         "USA",
+    "United Arab Emirates":  "ARE",
+    "Saudi Arabia":          "SAU",
+    "Japan":                 "JPN",
+    "Germany":               "DEU",
+    "Australia":             "AUS",
+    "Australian":            "AUS",
+    "Italy":                 "ITA",
+    "Greece":                "GRC",
+    "Netherlands":           "NLD",
+    "France":                "FRA",
+    "Singapore":             "SGP",
+    "European Union":        None,   # 无对应 ISO-3，跳过
+    # 台湾数据归入中国
+    "Taiwan":                "CHN",
+    "Taiwan, China":         "CHN",
+    "Chinese Taipei":        "CHN",
+}
+
+
 def _render_geo_map(geo_stats: dict, i18n: dict, lang: str, c: dict):
     nation_data = geo_stats.get("nation", {})
     if not nation_data:
         st.caption("暂无地理数据" if lang == "cn" else "No geographic data available")
         return
 
-    nations = list(nation_data.keys())
-    counts  = list(nation_data.values())
+    # 合并到 ISO-3，台湾数据并入中国
+    iso3_counts: dict[str, int] = {}
+    iso3_labels: dict[str, str] = {}   # ISO-3 → 显示名称
+    for nation, cnt in nation_data.items():
+        iso3 = _NATION_TO_ISO3.get(nation)
+        if iso3 is None:
+            # 未在映射表中的，尝试直接用名称（Plotly 会自动识别常见英文名）
+            iso3 = nation
+        iso3_counts[iso3] = iso3_counts.get(iso3, 0) + int(cnt)
+        # 显示名称：中国统一显示为"中国"/"China"
+        if iso3 == "CHN":
+            iso3_labels[iso3] = "中国" if lang == "cn" else "China"
+        else:
+            iso3_labels[iso3] = nation
+
+    locations = list(iso3_counts.keys())
+    counts    = list(iso3_counts.values())
+    hover_names = [iso3_labels.get(loc, loc) for loc in locations]
 
     title_cn = "论文来源国家 / 地区分布"
     title_en = "Paper Origin by Country / Region"
 
+    dark = st.session_state.get("theme_mode", "dark") == "dark"
+
     fig = go.Figure(go.Choropleth(
-        locations=nations,
-        locationmode="country names",
+        locations=locations,
+        locationmode="ISO-3",
         z=counts,
+        text=hover_names,
         colorscale=[
             [0.0,  "#1e3a5f"],
             [0.15, "#1d4ed8"],
             [0.4,  "#3b82f6"],
             [0.7,  "#60a5fa"],
             [1.0,  "#bfdbfe"],
-        ] if st.session_state.get("theme_mode", "dark") == "dark" else "Blues",
+        ] if dark else "Blues",
         reversescale=True,
         colorbar=dict(
             title=dict(text="论文数" if lang == "cn" else "Papers", font=dict(color=c["font_color"])),
@@ -125,7 +167,7 @@ def _render_geo_map(geo_stats: dict, i18n: dict, lang: str, c: dict):
             bgcolor="rgba(0,0,0,0)",
             outlinewidth=0,
         ),
-        hovertemplate="<b>%{location}</b><br>" +
+        hovertemplate="<b>%{text}</b><br>" +
                       ("论文数" if lang == "cn" else "Papers") + ": %{z}<extra></extra>",
     ))
 
@@ -140,12 +182,14 @@ def _render_geo_map(geo_stats: dict, i18n: dict, lang: str, c: dict):
             showcoastlines=True,
             coastlinecolor="rgba(150,150,150,0.4)",
             showland=True,
-            landcolor="#1f2937" if st.session_state.get("theme_mode", "dark") == "dark" else "#f0f4f8",
+            landcolor="#1f2937" if dark else "#f0f4f8",
             showocean=True,
-            oceancolor="#111827" if st.session_state.get("theme_mode", "dark") == "dark" else "#dbeafe",
+            oceancolor="#111827" if dark else "#dbeafe",
             showlakes=False,
             projection_type="natural earth",
             bgcolor="rgba(0,0,0,0)",
+            # resolution=50 使用 Natural Earth 50m 数据，台湾与中国大陆同属一个多边形
+            resolution=50,
         ),
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color=c["font_color"]),
@@ -154,8 +198,19 @@ def _render_geo_map(geo_stats: dict, i18n: dict, lang: str, c: dict):
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key="stats_geo_map")
 
-    # 排行榜
-    sorted_nations = sorted(nation_data.items(), key=lambda x: x[1], reverse=True)
+    # 排行榜（用原始国家名显示，台湾归入中国后不单独列出）
+    display_data: dict[str, int] = {}
+    for nation, cnt in nation_data.items():
+        iso3 = _NATION_TO_ISO3.get(nation, nation)
+        if iso3 == "CHN":
+            display_name = "中国" if lang == "cn" else "China"
+        elif iso3 is None:
+            display_name = nation
+        else:
+            display_name = nation
+        display_data[display_name] = display_data.get(display_name, 0) + int(cnt)
+
+    sorted_nations = sorted(display_data.items(), key=lambda x: x[1], reverse=True)
     rank_label = "📊 国家排行" if lang == "cn" else "📊 Country Ranking"
     with st.expander(rank_label, expanded=False):
         cols = st.columns(3, gap="small")

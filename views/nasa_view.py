@@ -17,29 +17,37 @@ NS = {
 def _extract_image_from_html(html: str) -> str | None:
     """
     从 content:encoded 的 HTML 中提取第一张主图 URL。
-    优先取带 fetchpriority="high" 的图（通常是主图），否则取第一个 img src。
-    URL 中的 &amp; 会被反转义，并裁剪为合适尺寸（w=1200）。
+    先整体 unescape，再用双引号定界的正则匹配 src（NASA 页面 src 均用双引号）。
+    优先取 fetchpriority="high" 的图，否则取第一个 assets.science.nasa.gov 图。
     """
-    # 优先：fetchpriority="high" 的图
-    m = re.search(r'fetchpriority=["\']high["\'][^>]*src=["\']([^"\']+)["\']', html, re.IGNORECASE)
-    if not m:
-        m = re.search(r'src=["\']([^"\']+)["\'][^>]*fetchpriority=["\']high["\']', html, re.IGNORECASE)
-    # 备用：第一个 assets.science.nasa.gov 图片
-    if not m:
-        m = re.search(r'src=["\'](https://assets\.science\.nasa\.gov[^"\']+)["\']', html, re.IGNORECASE)
-    # 再备用：任意 https img src
-    if not m:
-        m = re.search(r'src=["\'](https://[^"\']+\.(?:jpg|jpeg|png|webp)[^"\']*)["\']', html, re.IGNORECASE)
+    from html import unescape
+    html = unescape(html)
 
-    if not m:
-        return None
+    # 提取所有 <img ...> 标签的属性字典（只处理双引号属性值）
+    def parse_img_attrs(tag: str) -> dict:
+        return dict(re.findall(r'(\w[\w-]*)="([^"]*)"', tag))
 
-    url = m.group(1)
-    # 反转义 HTML 实体
-    url = url.replace("&amp;", "&").replace("&#038;", "&")
-    # 把超大尺寸替换为 1200px 宽，减少加载时间
-    url = re.sub(r"[?&]w=\d+", lambda mo: mo.group(0).replace(mo.group(0).split("=")[1], "1200"), url, count=1)
-    # 去掉 h= 参数，让服务端按比例缩放
+    img_tags = re.findall(r'<img\s[^>]+>', html, re.IGNORECASE | re.DOTALL)
+
+    # 优先：fetchpriority="high"
+    for tag in img_tags:
+        attrs = parse_img_attrs(tag)
+        if attrs.get("fetchpriority") == "high" and attrs.get("src", "").startswith("https://"):
+            return _normalize_url(attrs["src"])
+
+    # 备用：第一个 assets.science.nasa.gov
+    for tag in img_tags:
+        attrs = parse_img_attrs(tag)
+        src = attrs.get("src", "")
+        if src.startswith("https://assets.science.nasa.gov"):
+            return _normalize_url(src)
+
+    return None
+
+
+def _normalize_url(url: str) -> str:
+    """把图片 URL 裁剪为 1200px 宽，去掉 h= 参数。"""
+    url = re.sub(r"([?&]w)=\d+", r"\g<1>=1200", url, count=1)
     url = re.sub(r"&h=\d+", "", url)
     return url
 

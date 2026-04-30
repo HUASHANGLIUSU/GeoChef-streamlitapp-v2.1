@@ -68,7 +68,8 @@ def init_session():
 def render_sidebar(i18n: dict, lang: str):
     with st.sidebar:
         st.markdown(
-            f"<h1 style='font-size:1.8rem;margin:0 0 0.5rem 0'>{i18n['title']}</h1>",
+            f"<div class='sidebar-title'>{i18n['title']}</div>"
+            f"<div class='sidebar-subtitle'>RS-VLM Dataset Platform</div>",
             unsafe_allow_html=True
         )
         st.divider()
@@ -97,7 +98,7 @@ def render_sidebar(i18n: dict, lang: str):
         st.divider()
         st.markdown(
             f'<a href="https://github.com/VisionXLab/Awesome-RS-VL-Data" target="_blank" '
-            f'class="github-link" style="font-size:0.85rem">{i18n["github_link"]}</a>',
+            f'class="github-link">⭐ {i18n["github_link"]}</a>',
             unsafe_allow_html=True
         )
 
@@ -110,13 +111,13 @@ def render_sidebar(i18n: dict, lang: str):
                 f"📅 {nasa_thumb['date_str']}"
             )
             st.markdown(
-                f"<p style='font-size:0.75rem;margin:0 0 4px 0;opacity:0.8'>"
+                f"<p style='font-size:0.75rem;margin:0 0 4px 0;color:var(--text-muted)'>"
                 f"🛰️ {'NASA 每日一图' if lang == 'cn' else 'NASA Image of Day'} · {badge}</p>",
                 unsafe_allow_html=True,
             )
             st.image(nasa_thumb["image_url"], use_container_width=True)
             st.markdown(
-                f"<p style='font-size:0.72rem;margin:2px 0 0 0;opacity:0.65'>"
+                f"<p style='font-size:0.72rem;margin:4px 0 0 0;opacity:0.6'>"
                 f"{nasa_thumb['title']}</p>",
                 unsafe_allow_html=True,
             )
@@ -126,8 +127,11 @@ def render_topbar(i18n: dict, lang: str):
     page_info = next((p for p in PAGES if p[0] == st.session_state.page), PAGES[0])
     name = page_info[1] if lang == "cn" else page_info[2]
     st.markdown(
-        f"<h2 style='margin:0 0 1.2rem 0;padding-bottom:0.6rem;"
-        f"border-bottom:2px solid #2563eb'>{page_info[3]} {name}</h2>",
+        f"<div class='topbar-wrap'>"
+        f"<span class='topbar-accent'></span>"
+        f"<span class='topbar-icon'>{page_info[3]}</span>"
+        f"<span class='topbar-title'>{name}</span>"
+        f"</div>",
         unsafe_allow_html=True
     )
 
