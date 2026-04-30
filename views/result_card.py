@@ -1,7 +1,21 @@
 import hashlib
+import re
 import streamlit as st
 from model import ECNUModel
 from github_parser import get_paper_link_by_name
+
+
+def _md_line_to_html(line: str) -> str:
+    """把 '- **key**: value' 格式的 Markdown 行转成 HTML span。"""
+    line = line.strip()
+    if not line:
+        return ""
+    # 替换 **text** 为 <b>text</b>
+    line = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", line)
+    # 去掉开头的 '- '
+    if line.startswith("- "):
+        line = line[2:]
+    return f"<span class='field-kv'>- {line}</span>"
 
 # 主要字段：大字显示
 _PRIMARY_FIELDS = {"Name", "name", "Year", "year", "#Samples", "Modality", "modality", "Type", "type"}
@@ -22,20 +36,20 @@ def _render_fields(raw_fields: list, lang: str, card_key: str):
         all_lines = st.session_state[cache_key]
         # 按原始顺序拆回主次
         all_keys = [k for k, _ in raw_fields]
-        primary_lines   = [all_lines[i] for i, (k, _) in enumerate(raw_fields) if k in _PRIMARY_FIELDS]
-        secondary_lines = [all_lines[i] for i, (k, _) in enumerate(raw_fields) if k not in _PRIMARY_FIELDS]
+        primary_lines   = [_md_line_to_html(all_lines[i]) for i, (k, _) in enumerate(raw_fields) if k in _PRIMARY_FIELDS]
+        secondary_lines = [_md_line_to_html(all_lines[i]) for i, (k, _) in enumerate(raw_fields) if k not in _PRIMARY_FIELDS]
     else:
-        primary_lines   = [f"- **{k}**: {v}" for k, v in primary]
-        secondary_lines = [f"- **{k}**: {v}" for k, v in secondary]
+        primary_lines   = [f"<span class='field-kv'>- <b>{k}</b>: {v}</span>" for k, v in primary]
+        secondary_lines = [f"<span class='field-kv'>- <b>{k}</b>: {v}</span>" for k, v in secondary]
 
     if primary_lines:
         st.markdown(
-            "<div class='field-primary'>" + "\n".join(primary_lines) + "</div>",
+            "<div class='field-primary'>" + " ".join(primary_lines) + "</div>",
             unsafe_allow_html=True,
         )
     if secondary_lines:
         st.markdown(
-            "<div class='field-secondary'>" + "\n".join(secondary_lines) + "</div>",
+            "<div class='field-secondary'>" + " ".join(secondary_lines) + "</div>",
             unsafe_allow_html=True,
         )
 
