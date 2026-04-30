@@ -69,7 +69,11 @@ def render_sidebar(i18n: dict, lang: str):
     with st.sidebar:
         st.markdown(
             f"<div class='sidebar-title'>{i18n['title']}</div>"
-            f"<div class='sidebar-subtitle'>RS-VLM Dataset Platform</div>",
+            f"<div class='sidebar-subtitle'>RS-VLM Dataset Platform</div>"
+            f"<div style='margin-top:6px'>"
+            f'<a href="https://github.com/VisionXLab/Awesome-RS-VL-Data" target="_blank" '
+            f'class="github-link">⭐ {i18n["github_link"]}</a>'
+            f"</div>",
             unsafe_allow_html=True
         )
         st.divider()
@@ -96,11 +100,6 @@ def render_sidebar(i18n: dict, lang: str):
             st.rerun()
 
         st.divider()
-        st.markdown(
-            f'<a href="https://github.com/VisionXLab/Awesome-RS-VL-Data" target="_blank" '
-            f'class="github-link">⭐ {i18n["github_link"]}</a>',
-            unsafe_allow_html=True
-        )
 
         # NASA 每日一图缩略图（侧边栏底部）
         nasa_thumb = st.session_state.get("_nasa_thumb")
