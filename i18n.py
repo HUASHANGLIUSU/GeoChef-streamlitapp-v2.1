@@ -67,6 +67,8 @@ I18N = {
         "paper_followup_placeholder": "继续追问这篇论文，如这篇论文的方法有什么局限性",
         "paper_followup_input": "追问",
         "paper_followup_send": "📤 追问",
+        "nasa_title": "NASA 每日一图",
+        "nasa_sidebar_label": "今日 NASA 图",
     },
     "en": {
         "title": "🌍 GeoChef ",
@@ -136,5 +138,7 @@ I18N = {
         "paper_followup_placeholder": "Ask a follow-up question, e.g. 'What are the limitations of this method?'",
         "paper_followup_input": "Follow-up",
         "paper_followup_send": "📤 Ask",
+        "nasa_title": "NASA Image of the Day",
+        "nasa_sidebar_label": "Today's NASA Image",
     }
 }

@@ -1,8 +1,104 @@
 import streamlit as st
+from datetime import datetime
 from views.result_card import render_result_card
 from views.leakage_graph import render_leakage_graph
+from views.export_utils import (
+    leak_to_excel, leak_to_csv, leak_to_word, leak_to_bibtex, leak_to_markdown,
+)
 
 PAGE_SIZE = 10
+
+_LEAK_FORMATS = [
+    ("Excel",    "📊", "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    ("CSV",      "📄", "csv",  "text/csv"),
+    ("Word",     "📝", "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    ("BibTeX",   "📚", "bib",  "text/plain"),
+    ("Markdown", "🗒️", "md",   "text/markdown"),
+]
+_LEAK_GENERATORS = {
+    "Excel":    leak_to_excel,
+    "CSV":      leak_to_csv,
+    "Word":     leak_to_word,
+    "BibTeX":   leak_to_bibtex,
+    "Markdown": leak_to_markdown,
+}
+
+
+def _render_leak_export(entries: list[dict], source_label: str,
+                        lang: str, cache_suffix: str):
+    """泄露检测结果导出面板，复用于单源和批量模式。"""
+    if not entries:
+        return
+    is_cn = lang == "cn"
+    label = (
+        f"📤 {'导出检测结果' if is_cn else 'Export Results'}"
+        f" ({len(entries)} {'条' if is_cn else 'items'})"
+    )
+    with st.expander(label, expanded=False):
+        hint = (
+            "导出包含原始数据集来源（LeakSource / IncludedSources）字段，导出全量结果。"
+            if is_cn else
+            "Export includes LeakSource and IncludedSources fields. All results exported."
+        )
+        st.caption(hint)
+
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        cols = st.columns(len(_LEAK_FORMATS), gap="small")
+        for col, (fmt_name, icon, ext, mime) in zip(cols, _LEAK_FORMATS):
+            with col:
+                if fmt_name == "Word":
+                    try:
+                        import docx  # noqa: F401
+                    except ImportError:
+                        st.button(f"{icon} {fmt_name}",
+                                  key=f"leak_exp_{fmt_name}_{cache_suffix}_dis",
+                                  use_container_width=True, disabled=True,
+                                  help="需要安装 python-docx")
+                        continue
+
+                cache_key = f"_leak_export_{fmt_name}_{cache_suffix}_{len(entries)}"
+                if cache_key not in st.session_state:
+                    try:
+                        st.session_state[cache_key] = _LEAK_GENERATORS[fmt_name](
+                            entries, source_label
+                        )
+                    except Exception as e:
+                        st.error(f"{fmt_name} 生成失败: {e}")
+                        continue
+
+                st.download_button(
+                    label=f"{icon} {fmt_name}",
+                    data=st.session_state[cache_key],
+                    file_name=f"leak_{ts}.{ext}",
+                    mime=mime,
+                    key=f"leak_dl_{fmt_name}_{cache_suffix}_{len(entries)}",
+                    use_container_width=True,
+                    type="secondary",
+                )
+
+
+def _render_chat_hint(lang: str):
+    """标题下方的 ChatECNU 跳转提示条。"""
+    is_cn = lang == "cn"
+    hint_text = "💡 不确定该查哪个数据集？问问 ChatECNU 助手，它了解数据泄露检测的完整流程。"
+    hint_en   = "💡 Not sure which dataset to check? Ask the ChatECNU Assistant — it knows the full leakage detection workflow."
+    btn_text  = "去问问 →" if is_cn else "Ask Now →"
+
+    col_hint, col_btn = st.columns([5, 1], gap="small")
+    with col_hint:
+        st.markdown(
+            f"<div style='padding:0.55rem 0.9rem;border-radius:8px;"
+            f"border:1px solid rgba(37,99,235,0.35);"
+            f"background:rgba(37,99,235,0.08);"
+            f"font-size:0.88rem;line-height:1.5'>"
+            f"{hint_text if is_cn else hint_en}</div>",
+            unsafe_allow_html=True,
+        )
+    with col_btn:
+        if st.button(btn_text, key="leakage_to_chat_btn", use_container_width=True, type="secondary"):
+            st.session_state.page = "chat"
+            st.rerun()
+    st.markdown("<div style='margin-bottom:0.6rem'></div>", unsafe_allow_html=True)
 
 
 def _render_result_list(results: list, key_prefix: str, page_key: str,
@@ -46,11 +142,11 @@ def _render_result_list(results: list, key_prefix: str, page_key: str,
             else:
                 st.session_state.leak_results = None
                 st.session_state.leak_page = 0
-            st.session_state[page_key] = 0
             st.rerun()
 
 
 def render_leakage(i18n: dict, lang: str, chef):
+    _render_chat_hint(lang)
     all_sources = chef.get_all_sources()
 
     tab_single, tab_batch = st.tabs([
@@ -86,7 +182,8 @@ def render_leakage(i18n: dict, lang: str, chef):
             else:
                 st.markdown(f"<h5>{i18n['leak_used_by'].format(count=len(results))}</h5>",
                             unsafe_allow_html=True)
-                render_leakage_graph(selected_label, results, i18n)
+                render_leakage_graph(selected_label, results, i18n, chart_key="single")
+                _render_leak_export(results, selected_label, lang, cache_suffix="single")
                 _render_result_list(results, "leak", "leak_page", i18n, lang)
 
     # ── 批量检测 ──────────────────────────────────────────
@@ -126,6 +223,8 @@ def render_leakage(i18n: dict, lang: str, chef):
                 unsafe_allow_html=True
             )
             common_entries = [e for e in list(per_source.values())[0] if e["name"] in common_names]
+            batch_source_label = " ∩ ".join(st.session_state.get("leak_batch_selected", []))
+            _render_leak_export(common_entries, batch_source_label, lang, cache_suffix="batch_common")
             _render_result_list(common_entries, "batch_common", "batch_common_page", i18n, lang)
         else:
             st.markdown(f"<div class='no-result'><h4>{i18n['leak_batch_no_common']}</h4></div>",
@@ -139,6 +238,7 @@ def render_leakage(i18n: dict, lang: str, chef):
                 if not entries:
                     st.caption(i18n["leak_no_result"])
                 else:
-                    render_leakage_graph(src, entries, i18n)
+                    render_leakage_graph(src, entries, i18n, chart_key=f"bsrc{src_idx}")
+                    _render_leak_export(entries, src, lang, cache_suffix=f"bsrc{src_idx}")
                     for idx, entry in enumerate(entries):
                         render_result_card(entry["item"], f"{safe_key}_{idx}", i18n, lang)

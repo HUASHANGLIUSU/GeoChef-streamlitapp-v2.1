@@ -5,7 +5,7 @@ import math
 MAX_NODES = 30
 
 
-def render_leakage_graph(source_name: str, results: list, i18n: dict):
+def render_leakage_graph(source_name: str, results: list, i18n: dict, chart_key: str = ""):
     if not results:
         return
 
@@ -37,13 +37,14 @@ def render_leakage_graph(source_name: str, results: list, i18n: dict):
 
     n = len(display_results)
     radius = 2.2 if n > 10 else 1.8
+    max_label_len = 12 if n > 20 else 15 if n > 10 else 18
     for i, entry in enumerate(display_results):
         angle = 2 * math.pi * i / n
         x = center_x + radius * math.cos(angle)
         y = center_y + radius * math.sin(angle)
         nodes_x.append(x)
         nodes_y.append(y)
-        label = entry["name"] if len(entry["name"]) <= 18 else entry["name"][:16] + "…"
+        label = entry["name"] if len(entry["name"]) <= max_label_len else entry["name"][:max_label_len - 1] + "…"
         nodes_text.append(label)
         nodes_color.append("#2563eb")
         nodes_size.append(14)
@@ -86,4 +87,7 @@ def render_leakage_graph(source_name: str, results: list, i18n: dict):
         )
     )
 
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    # key 用 source_name + 节点数生成，传入 chart_key 可进一步区分同名源
+    import hashlib
+    _key = hashlib.md5(f"{chart_key}_{source_name}_{len(results)}".encode()).hexdigest()[:12]
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=f"lgraph_{_key}")

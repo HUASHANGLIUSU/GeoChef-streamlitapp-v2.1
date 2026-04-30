@@ -1,9 +1,5 @@
 from openai import OpenAI
-from dotenv import load_dotenv
-import os
 import streamlit as st
-
-load_dotenv()
 
 CLIENT = OpenAI(
     base_url="https://www.autodl.art/api/v1",

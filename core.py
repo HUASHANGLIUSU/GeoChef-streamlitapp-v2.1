@@ -53,7 +53,7 @@ class GeoChef:
                     item = row.dropna().to_dict()
                     item["_sheet"] = sheet
                     item["_text"] = json.dumps(item, ensure_ascii=False).lower()
-                    item["_years"] = set(re.findall(r'\b(199\d|20[0-2]\d)\b', item["_text"]))
+                    item["_years"] = set(re.findall(r'\b(19\d{2}|20\d{2})\b', item["_text"]))
                     items.append(item)
 
                     p = str(item.get("Publisher", item.get("publisher", ""))).strip()
@@ -96,6 +96,8 @@ class GeoChef:
                 self._name_to_item[name] = item
         self._stats_cache = self._compute_stats()
         self._all_dataset_names = self._compute_dataset_names()
+        self._geo_stats = self._compute_geo_stats(path)
+        self._trend_stats = self._compute_trend_stats()
 
     def get_all_sources(self) -> list[str]:
         return self._all_sources
@@ -231,3 +233,42 @@ class GeoChef:
 
     def random_one(self):
         return random.choice(self.data) if self.data else None
+
+    def get_geo_stats(self) -> dict:
+        return self._geo_stats
+
+    def get_trend_stats(self) -> dict:
+        return self._trend_stats
+
+    def _compute_geo_stats(self, path: str) -> dict:
+        """从统计 sheet 读取国家分布数据。"""
+        try:
+            df = pd.read_excel(path, sheet_name="统计期刊数量、国家数量、年份")
+            nation_df = df[["nation", "nation_count"]].dropna()
+            # 修正 "Australian" -> "Australia"
+            nation_df = nation_df.copy()
+            nation_df["nation"] = nation_df["nation"].replace({"Australian": "Australia"})
+            nation_dict = dict(zip(nation_df["nation"].astype(str), nation_df["nation_count"].astype(int)))
+            return {"nation": nation_dict}
+        except Exception as e:
+            print(f"[GeoChef] 地理统计加载失败: {e}")
+            return {"nation": {}}
+
+    def _compute_trend_stats(self) -> dict:
+        """
+        按任务类型 × 年份统计数据集数量，用于趋势折线图。
+        返回 {task: {year: count}} 结构。
+        """
+        from collections import defaultdict
+        trend: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        for item in self.data:
+            years = item.get("_years", set())
+            if not years:
+                continue
+            year = min(years)
+            text = item.get("_text", "")
+            for task in TASK_LIST:
+                if task.lower() in text:
+                    trend[task][year] += 1
+        # 转为普通 dict，年份排序
+        return {task: dict(sorted(y.items())) for task, y in trend.items()}

@@ -22,7 +22,9 @@ def render_result_card(item: dict, card_key: str, i18n: dict, lang: str):
                 if k not in ["_sheet", "_text", "_years", "数据集备注"] and v
             ]
             if lang == "en" and raw_fields:
-                cache_key = f"_trans_{card_key}"
+                import hashlib
+                _fields_hash = hashlib.md5(str(raw_fields).encode()).hexdigest()[:8]
+                cache_key = f"_trans_{card_key}_{_fields_hash}"
                 if cache_key not in st.session_state:
                     st.session_state[cache_key] = ECNUModel.translate_item_fields(raw_fields)
                 lines = st.session_state[cache_key]

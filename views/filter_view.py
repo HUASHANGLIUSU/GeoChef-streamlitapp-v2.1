@@ -1,10 +1,36 @@
 import streamlit as st
 from views.result_card import render_result_card
+from views.export_panel import render_export_panel
 
 PAGE_SIZE = 10
 
 
+def _render_chat_hint(lang: str):
+    """标题下方的 ChatECNU 跳转提示条。"""
+    is_cn = lang == "cn"
+    hint_text = "💡 不知道怎么搜？问问 ChatECNU 助手吧，它能帮你分析需求、推荐筛选条件。"
+    hint_en   = "💡 Not sure how to search? Ask the ChatECNU Assistant — it can help you find the right filters."
+    btn_text  = "去问问 →" if is_cn else "Ask Now →"
+
+    col_hint, col_btn = st.columns([5, 1], gap="small")
+    with col_hint:
+        st.markdown(
+            f"<div style='padding:0.55rem 0.9rem;border-radius:8px;"
+            f"border:1px solid rgba(37,99,235,0.35);"
+            f"background:rgba(37,99,235,0.08);"
+            f"font-size:0.88rem;line-height:1.5'>"
+            f"{hint_text if is_cn else hint_en}</div>",
+            unsafe_allow_html=True,
+        )
+    with col_btn:
+        if st.button(btn_text, key="filter_to_chat_btn", use_container_width=True, type="secondary"):
+            st.session_state.page = "chat"
+            st.rerun()
+    st.markdown("<div style='margin-bottom:0.6rem'></div>", unsafe_allow_html=True)
+
+
 def render_filter(i18n: dict, lang: str, chef):
+    _render_chat_hint(lang)
     # 关键词搜索框
     search_query = st.text_input(
         i18n["search_placeholder"],
@@ -51,6 +77,9 @@ def render_filter(i18n: dict, lang: str, chef):
             unsafe_allow_html=True
         )
         return
+
+    # 导出面板（全量结果，不受分页影响）
+    render_export_panel(res, i18n, lang)
 
     if "result_page" not in st.session_state:
         st.session_state.result_page = 0

@@ -91,7 +91,7 @@ def _render_radar(items: list, i18n: dict):
         margin=dict(l=40, r=40, t=40, b=40),
         height=320,
     )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key="compare_radar")
 
 
 def render_compare(i18n: dict, lang: str, chef):
@@ -166,7 +166,10 @@ def render_compare(i18n: dict, lang: str, chef):
     label_col = "字段" if lang == "cn" else "Field"
 
     if lang == "en":
-        cache_key = "_compare_trans_" + "_".join(sorted(compare_names))
+        import hashlib
+        cache_key = "_compare_trans_" + hashlib.md5(
+            "||".join(sorted(compare_names)).encode()
+        ).hexdigest()[:16]
         if cache_key not in st.session_state:
             field_pairs = [(k, "") for k in active_keys]
             translated_fields_raw = ECNUModel.translate_item_fields(field_pairs)

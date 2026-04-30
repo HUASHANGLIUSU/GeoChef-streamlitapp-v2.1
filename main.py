@@ -10,6 +10,7 @@ from views.leakage_view import render_leakage
 from views.stats_view import render_stats
 from views.compare_view import render_compare
 from views.intro_view import render_intro
+from views.nasa_view import render_nasa
 
 if "theme_mode" not in st.session_state:
     st.session_state.theme_mode = "dark"
@@ -24,6 +25,7 @@ PAGES = [
     ("compare", "数据集对比",    "Compare",           "🔀"),
     ("filter",  "精准筛选",      "Search",            "🔍"),
     ("leakage", "数据泄露检测",  "Leakage Detection", "⚠️"),
+    ("nasa",    "NASA 每日一图", "NASA Image of Day", "🛰️"),
 ]
 
 
@@ -99,6 +101,26 @@ def render_sidebar(i18n: dict, lang: str):
             unsafe_allow_html=True
         )
 
+        # NASA 每日一图缩略图（侧边栏底部）
+        nasa_thumb = st.session_state.get("_nasa_thumb")
+        if nasa_thumb and nasa_thumb.get("image_url"):
+            st.divider()
+            badge = "📅 今日" if (lang == "cn" and nasa_thumb["is_today"]) else (
+                "📅 Today" if (lang == "en" and nasa_thumb["is_today"]) else
+                f"📅 {nasa_thumb['date_str']}"
+            )
+            st.markdown(
+                f"<p style='font-size:0.75rem;margin:0 0 4px 0;opacity:0.8'>"
+                f"🛰️ {'NASA 每日一图' if lang == 'cn' else 'NASA Image of Day'} · {badge}</p>",
+                unsafe_allow_html=True,
+            )
+            st.image(nasa_thumb["image_url"], use_container_width=True)
+            st.markdown(
+                f"<p style='font-size:0.72rem;margin:2px 0 0 0;opacity:0.65'>"
+                f"{nasa_thumb['title']}</p>",
+                unsafe_allow_html=True,
+            )
+
 
 def render_topbar(i18n: dict, lang: str):
     page_info = next((p for p in PAGES if p[0] == st.session_state.page), PAGES[0])
@@ -134,6 +156,10 @@ def main():
 
     if page == "intro":
         render_intro(lang)
+        return
+
+    if page == "nasa":
+        render_nasa(i18n, lang)
         return
 
     if "github_loaded" not in st.session_state:

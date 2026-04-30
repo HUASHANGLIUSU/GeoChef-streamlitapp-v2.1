@@ -2,16 +2,23 @@ import streamlit as st
 from model import ECNUModel
 from github_parser import get_paper_link_by_name
 from paper_explainer import explain_paper_by_link
-from views.chat_view import render_chat_history
+from views.chat_view import render_chat_history, _render_chat_export
 
 
 def _run_explain(link: str, name: str, lang: str, i18n: dict):
     """调用讲解 + 按需翻译，结果存入 paper_chat_history。"""
     full_text = ""
-    for chunk in explain_paper_by_link(link, name):
-        full_text += chunk
+    try:
+        for chunk in explain_paper_by_link(link, name):
+            full_text += chunk
+    except Exception as e:
+        full_text = (
+            f"❌ 讲解生成失败：{e}\n\n请检查网络连接或稍后重试。"
+            if lang == "cn" else
+            f"❌ Failed to generate explanation: {e}\n\nPlease check your connection and try again."
+        )
 
-    if lang == "en":
+    if full_text and lang == "en":
         with st.spinner(i18n["paper_translating"]):
             full_text = ECNUModel.translate_line(full_text)
 
@@ -74,6 +81,15 @@ def render_paper_chat(i18n: dict, lang: str):
         send_btn = st.button(btn_label, key="paper_send_btn", use_container_width=True, type="primary")
     with col3:
         clear_btn = st.button(i18n["paper_chat_clear"], key="paper_clear_btn", use_container_width=True, type="secondary")
+
+    # 导出面板（有历史时显示）
+    if has_history:
+        paper_title = "论文讲解对话记录" if lang == "cn" else "Paper Assistant Conversation"
+        _render_chat_export(
+            st.session_state.paper_chat_history, lang,
+            key_prefix="paper",
+            title=paper_title,
+        )
 
     if clear_btn:
         st.session_state.paper_chat_history = []
