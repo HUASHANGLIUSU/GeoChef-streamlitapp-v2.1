@@ -41,24 +41,24 @@ _FEATURES = [
 
 
 def _card(icon, title, desc, dark: bool) -> str:
-    bg      = "#1e293b" if dark else "#ffffff"
-    border  = "#334155" if dark else "#e2e8f0"
-    text    = "#f1f5f9" if dark else "#0f172a"
-    muted   = "#94a3b8" if dark else "#64748b"
-    primary = "#3b82f6" if dark else "#2563eb"
-    icon_bg = "rgba(59,130,246,0.12)" if dark else "rgba(37,99,235,0.08)"
-    shadow  = "rgba(0,0,0,0.25)" if dark else "rgba(0,0,0,0.06)"
+    bg      = "#0f2035"          if dark else "#ffffff"
+    border  = "#1a3050"          if dark else "#d0daea"
+    text    = "#e8edf5"          if dark else "#061f4a"
+    muted   = "#7a9bbf"          if dark else "#5a7a9e"
+    primary = "#02bfe7"          if dark else "#0b3d91"
+    icon_bg = "rgba(2,191,231,0.10)"  if dark else "rgba(11,61,145,0.07)"
+    shadow  = "rgba(0,0,0,0.3)"  if dark else "rgba(6,31,74,0.07)"
     return (
-        f"<div style='background:{bg};border:1px solid {border};border-radius:12px;"
+        f"<div style='background:{bg};border:1px solid {border};border-radius:10px;"
         f"padding:1.1rem 1.1rem 1rem 1.1rem;box-shadow:0 2px 8px {shadow};"
         f"transition:box-shadow 0.2s;height:100%'>"
-        f"<div style='display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem'>"
-        f"<span style='font-size:1.3rem;background:{icon_bg};border-radius:8px;"
-        f"width:2.2rem;height:2.2rem;display:flex;align-items:center;justify-content:center'>"
+        f"<div style='display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem'>"
+        f"<span style='font-size:1.25rem;background:{icon_bg};border-radius:7px;"
+        f"width:2.1rem;height:2.1rem;display:flex;align-items:center;justify-content:center'>"
         f"{icon}</span>"
-        f"<span style='font-size:0.95rem;font-weight:700;color:{text}'>{title}</span>"
+        f"<span style='font-size:0.92rem;font-weight:700;color:{text}'>{title}</span>"
         f"</div>"
-        f"<p style='font-size:0.82rem;color:{muted};line-height:1.6;margin:0'>{desc}</p>"
+        f"<p style='font-size:0.81rem;color:{muted};line-height:1.6;margin:0'>{desc}</p>"
         f"</div>"
     )
 
@@ -68,11 +68,11 @@ def render_intro(lang: str):
     is_cn = lang == "cn"
 
     # 平台简介
-    primary = "#3b82f6" if dark else "#2563eb"
-    text    = "#f1f5f9" if dark else "#0f172a"
-    muted   = "#94a3b8" if dark else "#64748b"
-    bg_hero = "rgba(59,130,246,0.06)" if dark else "rgba(37,99,235,0.04)"
-    border  = "#334155" if dark else "#e2e8f0"
+    primary = "#02bfe7" if dark else "#0b3d91"
+    text    = "#e8edf5" if dark else "#061f4a"
+    muted   = "#7a9bbf" if dark else "#5a7a9e"
+    bg_hero = "rgba(2,191,231,0.05)"   if dark else "rgba(11,61,145,0.04)"
+    border  = "#1a3050"                if dark else "#d0daea"
 
     hero_cn = (
         f"<div style='background:{bg_hero};border:1px solid {border};border-radius:14px;"
