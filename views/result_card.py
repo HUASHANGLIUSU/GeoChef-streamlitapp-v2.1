@@ -15,7 +15,7 @@ def _md_line_to_html(line: str) -> str:
     # 去掉开头的 '- '
     if line.startswith("- "):
         line = line[2:]
-    return f"<span class='field-kv'>- {line}</span>"
+    return f"<div class='field-kv'>- {line}</div>"
 
 # 主要字段：大字显示
 _PRIMARY_FIELDS = {"Name", "name", "Year", "year", "#Samples", "Modality", "modality", "Type", "type"}
@@ -39,8 +39,8 @@ def _render_fields(raw_fields: list, lang: str, card_key: str):
         primary_lines   = [_md_line_to_html(all_lines[i]) for i, (k, _) in enumerate(raw_fields) if k in _PRIMARY_FIELDS]
         secondary_lines = [_md_line_to_html(all_lines[i]) for i, (k, _) in enumerate(raw_fields) if k not in _PRIMARY_FIELDS]
     else:
-        primary_lines   = [f"<span class='field-kv'>- <b>{k}</b>: {v}</span>" for k, v in primary]
-        secondary_lines = [f"<span class='field-kv'>- <b>{k}</b>: {v}</span>" for k, v in secondary]
+        primary_lines   = [f"<div class='field-kv'>- <b>{k}</b>: {v}</div>" for k, v in primary]
+        secondary_lines = [f"<div class='field-kv'>- <b>{k}</b>: {v}</div>" for k, v in secondary]
 
     if primary_lines:
         st.markdown(
